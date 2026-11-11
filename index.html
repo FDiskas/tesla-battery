@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla Baterijos ir Atstumo Skaičiuoklė</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .segmented-bar {
+            display: flex;
+            gap: 2px;
+            height: 16px;
+            margin-top: 12px;
+        }
+        .segment {
+            flex: 1;
+            border-radius: 1px;
+            background-color: #e2e8f0;
+        }
+        .segment.green { background-color: #16a34a; }
+        .segment.dark { background-color: #334155; }
+        
+        /* Custom scrollbar for better look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-8">
+        
+        <!-- Antraštė ir Įvesties forma -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h1 class="text-2xl font-bold mb-6 text-slate-900">Tesla Baterijos ir Atstumo Skaičiuoklė</h1>
+            
+            <form id="calc-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- Modelio pasirinkimas -->
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-slate-600 mb-2">Automobilio modelis</label>
+                    <select id="tesla-model" class="w-full border-slate-300 rounded-lg shadow-sm p-3 bg-slate-50 border focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <option value="438,135">Model 3 RWD (Standard Range) - 438 km</option>
+                        <option value="620,130">Model 3 Long Range RWD - 620 km</option>
+                        <option value="576,140" selected>Model 3 Long Range AWD - 576 km</option>
+                        <option value="507,150">Model 3 Performance - 507 km</option>
+                        <option value="455,145">Model Y RWD - 455 km</option>
+                        <option value="533,155">Model Y Long Range AWD - 533 km</option>
+                        <option value="514,165">Model Y Performance - 514 km</option>
+                        <option value="634,160">Model S Dual Motor - 634 km</option>
+                        <option value="600,180">Model S Plaid - 600 km</option>
+                    </select>
+                </div>
+
+                <!-- Pagaminimo metai -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-2">Pagaminimo metai</label>
+                    <div class="relative">
+                        <input type="number" id="car-year" value="2022" min="2008" max="2027" class="w-full border-slate-300 rounded-lg shadow-sm p-3 bg-slate-50 border focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                    </div>
+                </div>
+
+                <!-- Rida -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-2">Rida (km)</label>
+                    <div class="relative">
+                        <input type="number" id="car-mileage" value="80000" min="0" step="1000" class="w-full border-slate-300 rounded-lg shadow-sm p-3 bg-slate-50 border focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <span class="absolute right-3 top-3 text-slate-400">km</span>
+                    </div>
+                </div>
+
+                <!-- Baterijos likutis % -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-2">Likutis</label>
+                    <div class="relative">
+                        <input type="number" id="current-battery-pct" value="80" min="1" max="100" class="w-full border-slate-300 rounded-lg shadow-sm p-3 bg-slate-50 border focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <span class="absolute right-3 top-3 text-slate-400">%</span>
+                    </div>
+                </div>
+
+                <!-- Rodomas atstumas -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-2">Ekrane rodoma</label>
+                    <div class="relative">
+                        <input type="number" id="current-bms-range" value="450" min="1" max="1000" class="w-full border-slate-300 rounded-lg shadow-sm p-3 bg-slate-50 border focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <span class="absolute right-3 top-3 text-slate-400">km</span>
+                    </div>
+                </div>
+
+                <!-- Vartotojo efektyvumas -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-2">Vid. sąnaudos (Neprivaloma)</label>
+                    <div class="relative">
+                        <input type="number" id="user-efficiency" placeholder="Gamyklinės" min="50" max="400" class="w-full border-slate-300 rounded-lg shadow-sm p-3 bg-slate-50 border focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <span class="absolute right-3 top-3 text-slate-400">Wh</span>
+                    </div>
+                </div>
+
+                <!-- Mygtukas -->
+                <div class="flex items-end">
+                    <button type="button" onclick="calculateStats()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium p-3 rounded-lg shadow-md transition duration-200">
+                        Skaičiuoti
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Dashboard UI (Panašus į Tesla ekrano nuotrauką) -->
+        <div>
+            <h2 class="text-xl font-semibold mb-4 text-slate-800">Jūsų baterija ir atstumas (Your battery & range)</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                
+                <!-- 1. Expected Range -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-700">Realus atstumas (Expected Range)</h3>
+                        <div class="mt-2 flex items-baseline">
+                            <span id="out-expected-range" class="text-5xl font-light text-slate-900 tracking-tight">410</span>
+                            <span class="text-lg text-slate-500 ml-1">km</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-1.5 mt-4">
+                            <div id="bar-expected" class="bg-slate-700 h-1.5 rounded-full" style="width: 71%"></div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-3">Jūsų Tesla automobilio realus nuvažiuojamas atstumas šiandien, atsižvelgiant į vairavimo stilių.</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center text-xs text-slate-500">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Remiantis jūsų sąnaudomis
+                    </div>
+                </div>
+
+                <!-- 2. Range Score -->
+                <div class="bg-blue-600 p-5 rounded-2xl shadow-sm border border-blue-500 flex flex-col justify-between text-white">
+                    <div>
+                        <h3 class="text-sm font-medium text-blue-100">Efektyvumo balas (Range Score)</h3>
+                        <div class="mt-2 flex items-baseline">
+                            <span id="out-range-score" class="text-5xl font-light tracking-tight">72</span>
+                            <span class="text-lg text-blue-200 ml-1">/ 100</span>
+                        </div>
+                        <div class="w-full bg-blue-800 rounded-full h-1.5 mt-4">
+                            <div id="bar-range-score" class="bg-white h-1.5 rounded-full" style="width: 72%"></div>
+                        </div>
+                        <p id="out-range-text" class="text-sm text-blue-100 mt-3 font-medium">Vidutiniškai</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-blue-500/50 flex items-center text-xs text-blue-200">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Efektyvumo įvertinimas
+                    </div>
+                </div>
+
+                <!-- 3. EPA Score -->
+                <div class="bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-800 flex flex-col justify-between text-white">
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-300">WLTP Atitikimas (EPA Score)</h3>
+                        <div class="mt-2 flex items-baseline">
+                            <span id="out-epa-score" class="text-5xl font-light tracking-tight">71</span>
+                            <span class="text-lg text-slate-400 ml-1">/ 100</span>
+                        </div>
+                        <div class="w-full bg-slate-700 rounded-full h-1.5 mt-4">
+                            <div id="bar-epa-score" class="bg-green-400 h-1.5 rounded-full" style="width: 71%"></div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-3">
+                            Jūsų laukiamas atstumas yra <span id="text-expected-km" class="text-slate-200">410 km</span>, kas sudaro <span id="text-epa-percent" class="text-slate-200">71%</span> nuo gamintojo deklaruojamo <span id="text-wltp-km" class="text-slate-200">576 km</span> WLTP atstumo.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-700 flex items-center text-xs text-slate-400">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Lyginant su nauju
+                    </div>
+                </div>
+
+                <!-- 4. Battery Health -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-700">Baterijos būklė (Health Estimate)</h3>
+                        <div class="mt-2 flex items-baseline text-green-600">
+                            <span id="out-health" class="text-5xl font-bold tracking-tight">99</span>
+                            <span class="text-2xl ml-1">%</span>
+                        </div>
+                        <p id="out-health-desc" class="text-xs text-slate-500 mt-2 h-8">Panašaus amžiaus Tesla modelių būklė paprastai svyruoja tarp 87-95%</p>
+                        
+                        <div id="health-segments" class="segmented-bar">
+                            <!-- JS bus generuojami segmentai -->
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center text-xs text-slate-500">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Apskaičiuota BMS talpa
+                    </div>
+                </div>
+
+                <!-- 5. Battery Degradation -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-700">Degradacija (Battery Degradation)</h3>
+                        <div class="mt-2 flex items-baseline">
+                            <span id="out-degradation" class="text-5xl font-light text-slate-900 tracking-tight">1</span>
+                            <span class="text-2xl text-slate-900 ml-1">%</span>
+                        </div>
+                        <p id="out-deg-desc" class="text-xs text-slate-500 mt-2 h-8">Panašaus amžiaus modeliai paprastai turi tarp 5-13% degradaciją</p>
+                        
+                        <div class="flex items-center gap-2 mt-3">
+                            <div id="degradation-segments" class="segmented-bar flex-1 mt-0">
+                                <!-- JS bus generuojami segmentai -->
+                            </div>
+                            <span class="text-xs font-semibold text-slate-400">30%</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center text-xs text-slate-500">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Baterijos talpos praradimas
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Sukuria segmentuotą progresijos juostą
+        function renderSegments(containerId, maxSegments, activeSegments, colorClass) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            for (let i = 0; i < maxSegments; i++) {
+                const segment = document.createElement('div');
+                segment.className = `segment ${i < activeSegments ? colorClass : ''}`;
+                container.appendChild(segment);
+            }
+        }
+
+        // Pagrindinė skaičiavimo funkcija
+        function calculateStats() {
+            try {
+                // Gaunami duomenys iš formos
+                const modelData = document.getElementById('tesla-model').value.split(',');
+                const wltpRange = parseFloat(modelData[0]); // Nominalus atstumas
+                const nominalEfficiency = parseFloat(modelData[1]); // Gamyklinės sąnaudos Wh/km
+                
+                let currentRange = parseFloat(document.getElementById('current-bms-range').value);
+                let currentBatteryPct = parseFloat(document.getElementById('current-battery-pct').value);
+                
+                // Jei sąnaudos neįvestos (tuščia), naudojame gamyklines
+                let userEfficiencyInput = document.getElementById('user-efficiency').value;
+                let userEfficiency = userEfficiencyInput ? parseFloat(userEfficiencyInput) : nominalEfficiency;
+                
+                let carYear = parseInt(document.getElementById('car-year').value);
+                let carMileage = parseInt(document.getElementById('car-mileage').value);
+
+                // Apsaugos nuo blogų ar tuščių įvesčių (kad neužlūžtų)
+                if (isNaN(currentRange) || currentRange <= 0) currentRange = 1;
+                if (isNaN(currentBatteryPct) || currentBatteryPct <= 0 || currentBatteryPct > 100) currentBatteryPct = 100;
+                if (isNaN(userEfficiency) || userEfficiency <= 0) userEfficiency = nominalEfficiency;
+                if (isNaN(carYear)) carYear = new Date().getFullYear();
+                if (isNaN(carMileage) || carMileage < 0) carMileage = 0;
+
+                // --- Skaičiavimai ---
+                
+                // Apskaičiuojamas atstumas, kurį automobilis rodytų prie 100% įkrovos
+                let bmsRangeMax = (currentRange / currentBatteryPct) * 100;
+                
+                // 1. Baterijos Būklė ir Degradacija (Battery Health & Degradation)
+                let healthPercent = (bmsRangeMax / wltpRange) * 100;
+                if (healthPercent > 100) healthPercent = 100;
+                let degradationPercent = 100 - healthPercent;
+
+                // 2. Realus Atstumas (Expected Range) prie 100%
+                let expectedRange = (bmsRangeMax * nominalEfficiency) / userEfficiency;
+
+                // 3. Efektyvumo Balas (Range Score)
+                let rangeScore = (expectedRange / bmsRangeMax) * 100;
+                if (rangeScore > 100) rangeScore = 100;
+                if (isNaN(rangeScore)) rangeScore = 100;
+
+                // 4. WLTP (EPA) Balas
+                let epaScore = (expectedRange / wltpRange) * 100;
+                if (isNaN(epaScore)) epaScore = 100;
+
+                // 5. Numatoma vidutinė degradacija pagal metus ir ridą (palyginimui)
+                let currentYear = new Date().getFullYear();
+                let age = Math.max(0, currentYear - carYear);
+                
+                let expectedDegradation = (age * 1.0) + (carMileage / 35000);
+                if (age === 0 && carMileage < 10000) expectedDegradation = 1; // Naujai mašinai
+                
+                let minDeg = Math.max(0, Math.round(expectedDegradation - 2));
+                let maxDeg = Math.max(minDeg + 2, Math.round(expectedDegradation + 3));
+
+                // --- Atnaujiname UI ---
+                document.getElementById('out-expected-range').innerText = Math.round(expectedRange);
+                document.getElementById('out-range-score').innerText = Math.round(rangeScore);
+                document.getElementById('out-epa-score').innerText = Math.round(epaScore);
+                document.getElementById('out-health').innerText = Math.round(healthPercent);
+                document.getElementById('out-degradation').innerText = Math.round(degradationPercent);
+
+                document.getElementById('text-expected-km').innerText = Math.round(expectedRange) + ' km';
+                document.getElementById('text-epa-percent').innerText = Math.round(epaScore) + '%';
+                document.getElementById('text-wltp-km').innerText = wltpRange + ' km';
+
+                const formattedMileage = (Math.round(carMileage / 1000) * 1000).toLocaleString('lt-LT');
+                document.getElementById('out-health-desc').innerText = `${carYear} metų modelių (rida ~${formattedMileage} km) būklė svyruoja tarp ${Math.max(0, 100-maxDeg)}-${Math.min(100, 100-minDeg)}%`;
+                document.getElementById('out-deg-desc').innerText = `${carYear} metų modeliai paprastai turi tarp ${minDeg}-${maxDeg}% degradaciją`;
+
+                document.getElementById('bar-expected').style.width = Math.round(epaScore) + '%';
+                document.getElementById('bar-range-score').style.width = Math.round(rangeScore) + '%';
+                document.getElementById('bar-epa-score').style.width = Math.round(epaScore) + '%';
+
+                let rangeText = "Vidutiniškai";
+                if (rangeScore >= 90) rangeText = "Puikiai (Excellent)";
+                else if (rangeScore >= 75) rangeText = "Gerai (Good)";
+                else if (rangeScore < 60) rangeText = "Prastai (Poor)";
+                document.getElementById('out-range-text').innerText = rangeText;
+
+                const totalHealthSegments = 30;
+                const activeHealthSegments = Math.round((healthPercent / 100) * totalHealthSegments);
+                renderSegments('health-segments', totalHealthSegments, activeHealthSegments, 'green');
+
+                const totalDegSegments = 30; 
+                let degSegmentCount = Math.round((degradationPercent / 30) * totalDegSegments);
+                if(degSegmentCount > totalDegSegments) degSegmentCount = totalDegSegments;
+                renderSegments('degradation-segments', totalDegSegments, degSegmentCount, 'dark');
+            } catch (error) {
+                console.error("Įvyko klaida skaičiuojant:", error);
+            }
+        }
+
+        // Užkraunant puslapį atliekamas pradinis skaičiavimas
+        window.onload = function() {
+            calculateStats();
+        };
+
+        // Pasiekiama kitiems moduliams (išsaugojimo skriptui)
+        window.calculateStats = calculateStats;
+
+        // Pridedam Event Listenerius formos inputams (reaguoja gyvai)
+        document.getElementById('tesla-model').addEventListener('change', calculateStats);
+        document.getElementById('car-year').addEventListener('input', calculateStats);
+        document.getElementById('car-mileage').addEventListener('input', calculateStats);
+        document.getElementById('current-battery-pct').addEventListener('input', calculateStats);
+        document.getElementById('current-bms-range').addEventListener('input', calculateStats);
+        document.getElementById('user-efficiency').addEventListener('input', calculateStats);
+    </script>
+
+    <!-- Saugus automatinis duomenų išsaugojimas -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tesla-calc';
+        let db, auth, currentUserId;
+
+        async function initStorage() {
+            try {
+                // Patikrinama, ar yra prieiga prie debesies konfigūracijos (jei ne - stabdoma tyliai)
+                if (typeof __firebase_config === 'undefined') return;
+                
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Prisijungiama
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                currentUserId = auth.currentUser?.uid;
+                
+                if (currentUserId) {
+                    loadData();
+                    setupAutoSave();
+                }
+            } catch (error) {
+                // KLAIDA SUGAAUNAMA TYLIAI: Skaičiuoklė nesugrius Android programėlėje!
+                console.warn("Išsaugojimas nepasiekiamas, naudojamas offline režimas.");
+            }
+        }
+
+        async function loadData() {
+            if (!currentUserId || !db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'calculator_settings', 'preferences');
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.model) document.getElementById('tesla-model').value = data.model;
+                    if (data.year) document.getElementById('car-year').value = data.year;
+                    if (data.mileage) document.getElementById('car-mileage').value = data.mileage;
+                    if (data.battery) document.getElementById('current-battery-pct').value = data.battery;
+                    if (data.range) document.getElementById('current-bms-range').value = data.range;
+                    if (data.efficiency) document.getElementById('user-efficiency').value = data.efficiency;
+                    
+                    // Perskaičiuojama po duomenų užkrovimo
+                    if(typeof window.calculateStats === 'function') {
+                        window.calculateStats();
+                    }
+                }
+            } catch (error) {
+                console.warn("Nepavyko užkrauti išsaugotų duomenų:", error);
+            }
+        }
+
+        let saveTimeout;
+        function scheduleSave() {
+            if (!currentUserId || !db) return;
+            clearTimeout(saveTimeout);
+            // Išsaugoma praėjus 1.5s po paskutinio mygtuko paspaudimo (kad nebūtų per daug užklausų)
+            saveTimeout = setTimeout(async () => {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'calculator_settings', 'preferences');
+                    await setDoc(docRef, {
+                        model: document.getElementById('tesla-model').value,
+                        year: document.getElementById('car-year').value,
+                        mileage: document.getElementById('car-mileage').value,
+                        battery: document.getElementById('current-battery-pct').value,
+                        range: document.getElementById('current-bms-range').value,
+                        efficiency: document.getElementById('user-efficiency').value,
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (error) {
+                    console.warn("Nepavyko išsaugoti progresų:", error);
+                }
+            }, 1500);
+        }
+
+        function setupAutoSave() {
+            const inputIds = ['tesla-model', 'car-year', 'car-mileage', 'current-battery-pct', 'current-bms-range', 'user-efficiency'];
+            inputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', scheduleSave);
+                    el.addEventListener('change', scheduleSave);
+                }
+            });
+        }
+
+        // Aktyvuojame saugojimą
+        initStorage();
+    </script>
+</body>
+</html>
